@@ -109,15 +109,15 @@ class JumperManager(AManager):
         self.scene.renderers[-1].addBody(self.jumper)
 
     def createPlatforms(self):
-        count = 7
+        count = 4
         renderer = PlatformRenderer(self.scene.contexts[0])
         # self.scene.renderers.append(renderer)
         self.scene.renderers.insert(0, renderer)
         self.bord = 5
         self.platform_xmax = self.screen[0] - self.bord - renderer.image_size[0]
         self.platform_ymax = self.screen[1] - self.bord - renderer.image_size[1]
-        self.platform_min_distance = self.max_jump_length // 2
-        self.platform_max_distance = -10 + self.max_jump_length
+        self.platform_min_distance = 7 * self.max_jump_length // 8
+        self.platform_max_distance = 15 * self.max_jump_length // 16
         top = self.screen[1] + self.jumper.getAttrib('size')[1]
         for i in range(count):
             platform = Body()
