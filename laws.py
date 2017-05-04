@@ -176,12 +176,15 @@ class JumperPlatformInteraction:
 			# в момент времени tau.
 			# В этот момент времени координата дудлера
 			# по y будет равна
-			njy = -jsy + py + t * pvy
+			njy = -jsy + py + tau*pvy
 
 			# Время, которое осталось для движения вверх:
 			up_moving_time = time_span - tau
-			njy += up_moving_time * (jvy + half_jay * up_moving_time)
-
+			# Установить в качестве скорости начальную вертикальную для дудлера
+			# jvy =
+			njy += up_moving_time * (jvy + half_jay*up_moving_time)
+		else:
+			njy =
 
 # class JumperMoving(ALaw):
 # 	@staticmethod
