@@ -165,9 +165,11 @@ class JumperPlatformInteraction:
 			t = self.getInteractionMoment(half_jay, jvy - pvy, jby - py, (0, tau))
 			if t:
 				psx, psy = platform.getAttrib('size')
-				njx = jx + t * jvx + 0.5 * jax * t * t
-				npx = px + t * pvx
-				if self.intersectSegments(njx, njx + jsx, npx, npx + psx):
+				njx = jx + t*jvx + 0.5*jax*t*t
+				npx = px + t*pvx
+				if self.intersectSegments(njx, njx+jsx, npx, npx+psx) or
+				   self.intersectSegments(njx+maxx, njx+jsx+maxx, npx, npx+psx) or
+				   self.intersectSegments(njx-maxx, njx+jsx-maxx, npx, npx+psx):
 					tau = t
 					special_platform = platform
 		if special_platform:
@@ -181,10 +183,19 @@ class JumperPlatformInteraction:
 			# Время, которое осталось для движения вверх:
 			up_moving_time = time_span - tau
 			# Установить в качестве скорости начальную вертикальную для дудлера
-			# jvy =
+			jvy = self.jumper.getAttrib('initial_vertical_velocity')
+
+			# Вычислить его координату по игрек по завершении движения
+			# вверх в текущий интервал времени
 			njy += up_moving_time * (jvy + half_jay*up_moving_time)
+
+			# Помним, что после этого времени вертикальная скорость дудлера
+			# изменилась:
+			jvy += jay * up_moving_time
 		else:
-			njy =
+			# Если столкновения таки не произошло, то двигаемся
+			# обычным способом:
+			njy += time_span * (jvy + half_jay*time_span)
 
 # class JumperMoving(ALaw):
 # 	@staticmethod
