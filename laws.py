@@ -1,4 +1,5 @@
 import numpy as np
+from collections import defaultdict
 
 
 class ALaw:
@@ -20,6 +21,40 @@ class ALaw:
 
     def apply(self):
         pass
+
+
+class OneBodiesContainerLaw(ALaw):
+    def __init__(self):
+        super().__init__()
+        self.bodies = []
+
+    def addBody(self, body, kind=None):
+        super().addBody(body, kind)
+        self.bodies.append(body)
+
+    def removeBody(self, body, kind=None):
+        super().removeBody(body, kind)
+        try:
+            self.bodies.remove(body)
+        except:
+            pass
+
+
+class BodiesDictLaw(ALaw):
+    def __init__(self):
+        super().__init__()
+        self.bodies = defaultdict(list)
+
+    def addBody(self, body, kind=None):
+        super().addBody(body, kind)
+        self.bodies[kind].append(body)
+
+    def removeBody(self, body, kind=None):
+        super().removeBody(body, kind)
+        try:
+            self.bodies[kind].remove(body)
+        except:
+            pass
 
 
 class JumperMoving(ALaw):
@@ -128,23 +163,10 @@ class JumperMoving(ALaw):
         return True
 
 
-class ScreenScrolling(ALaw):
+class ScreenScrolling(OneBodiesContainerLaw):
     @staticmethod
     def getName():
         return 'ScreenScrolling'
-
-    def __init__(self):
-        super().__init__()
-        self.bodies = []
-
-    def addBody(self, body, kind=None):
-        super().addBody(body, kind)
-        self.bodies.append(body)
-
-    def removeBody(self, body, kind=None):
-        super().removeBody(body, kind)
-        if body in self.bodies:
-            self.bodies.remove(body)
 
     def apply(self):
         scroll_size = self.params['scroll_size']
@@ -152,3 +174,12 @@ class ScreenScrolling(ALaw):
             x, y = b.getAttrib('position')
             y += scroll_size
             b.setAttrib('position', (x, y))
+
+
+class PlatformValidator(OneBodiesContainerLaw):
+    """
+    Проверяет платформы на валидность.
+    """
+    @staticmethod
+    def getName():
+        return 'PlatformValidator'
