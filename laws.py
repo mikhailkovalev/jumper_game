@@ -230,7 +230,7 @@ class PlatformUpdater(OneBodiesContainerLaw):
         platform_min_distance, platform_max_distance
         """
         top = int(min((b.getAttrib('position')[1]
-                       for b in self.bodies)))
+                       for b in self.bodies if b.getAttrib('valid'))))
 
         xmin = self.params.get('platform_xmin')
         xmax = self.params.get('platform_xmax')
