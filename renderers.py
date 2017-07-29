@@ -1,68 +1,69 @@
-from body import *
-from contexts import *
 from PIL import Image, ImageTk
 
+
 class ARenderer:
-	@staticmethod
-	def getName():
-		pass
+    @staticmethod
+    def getName():
+        pass
 
-	def __init__(self, context = None):
-		self.context = context
-		self.bodies = []
+    def __init__(self, context=None):
+        self.context = context
+        self.bodies = []
 
-	def addBody(self, body):
-		body.renderers.append(self.getName())
-		self.bodies.append(body)
+    def addBody(self, body):
+        body.renderers.append(self.getName())
+        self.bodies.append(body)
 
-	def renderOne(self, body):
-		pass
+    def renderOne(self, body):
+        pass
 
-	def renderAll(self):
-		for b in self.bodies:
-			self.renderOne(b)
+    def renderAll(self):
+        for b in self.bodies:
+            self.renderOne(b)
 
-	def setContext(self, context):
-		self.context = context
+    def setContext(self, context):
+        self.context = context
+
 
 class JumperRenderer(ARenderer):
-	@staticmethod
-	def getName():
-		return 'JumperRenderer'
+    @staticmethod
+    def getName():
+        return 'JumperRenderer'
 
-	def __init__(self, context = None):
-		super().__init__(context)
-		image = Image.open('./images/doodle.png')
-		self.image = ImageTk.PhotoImage(image)
-		self.image_size = image.size
+    def __init__(self, context=None):
+        super().__init__(context)
+        image = Image.open('./images/doodle.png')
+        self.image = ImageTk.PhotoImage(image)
+        self.image_size = image.size
 
-	def addBody(self, body):
-		super().addBody(body)
-		body.setAttrib('size', self.image_size)
+    def addBody(self, body):
+        super().addBody(body)
+        body.setAttrib('size', self.image_size)
 
-	def renderOne(self, body):
-		x, y = body.getAttrib('position')
-		self.context.drawImage(x, y, self.image)
-		maxx = body.getAttrib('max_x_coordinate')
-		if x + body.getAttrib('size')[0] > maxx:
-			x -= maxx
-			self.context.drawImage(x, y, self.image)
+    def renderOne(self, body):
+        x, y = body.getAttrib('position')
+        self.context.drawImage(x, y, self.image)
+        maxx = body.getAttrib('max_x_coordinate')
+        if x + body.getAttrib('size')[0] > maxx:
+            x -= maxx
+            self.context.drawImage(x, y, self.image)
+
 
 class PlatformRenderer(ARenderer):
-	@staticmethod
-	def getName():
-		return 'PlatformRenderer'
+    @staticmethod
+    def getName():
+        return 'PlatformRenderer'
 
-	def __init__(self, context = None):
-		super().__init__(context)
-		image = Image.open('./images/platform.png')
-		self.image = ImageTk.PhotoImage(image)
-		self.image_size = image.size
+    def __init__(self, context=None):
+        super().__init__(context)
+        image = Image.open('./images/platform.png')
+        self.image = ImageTk.PhotoImage(image)
+        self.image_size = image.size
 
-	def addBody(self, body):
-		super().addBody(body)
-		body.setAttrib('size', self.image_size)
+    def addBody(self, body):
+        super().addBody(body)
+        body.setAttrib('size', self.image_size)
 
-	def renderOne(self, body):
-		x, y = body.getAttrib('position')
-		self.context.drawImage(x, y, self.image)
+    def renderOne(self, body):
+        x, y = body.getAttrib('position')
+        self.context.drawImage(x, y, self.image)
