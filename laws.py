@@ -1,5 +1,6 @@
 import numpy as np
 from collections import defaultdict
+from random import randint
 
 
 class ALaw:
@@ -24,6 +25,11 @@ class ALaw:
 
 
 class OneBodiesContainerLaw(ALaw):
+    """
+    Имеет единственный контейнер для хранения тел.
+    Параметр kind, передаваемый в функции
+    addBody и removeBody игнорируется.
+    """
     def __init__(self):
         super().__init__()
         self.bodies = []
@@ -41,6 +47,9 @@ class OneBodiesContainerLaw(ALaw):
 
 
 class BodiesDictLaw(ALaw):
+    """
+    Хранит тела в defaultdict-е. Ключи - значения kind.
+    """
     def __init__(self):
         super().__init__()
         self.bodies = defaultdict(list)
@@ -169,7 +178,11 @@ class ScreenScrolling(OneBodiesContainerLaw):
         return 'ScreenScrolling'
 
     def apply(self):
-        scroll_size = self.params['scroll_size']
+        scroll_size = self.params.get('scroll_size')
+
+        if scroll_size is None:
+            return
+
         for b in self.bodies:
             x, y = b.getAttrib('position')
             y += scroll_size
@@ -183,3 +196,52 @@ class PlatformValidator(OneBodiesContainerLaw):
     @staticmethod
     def getName():
         return 'PlatformValidator'
+
+    def apply(self):
+        """
+        Ожидает в params-ах ключ screen_height.
+        Все подписанные тела, игрек-координата
+        которых больше этого значения
+        становятся невалидными.
+        """
+        screen_height = self.params.get('screen_height')
+
+        if screen_height is None:
+            return
+
+        for body in self.bodies:
+            if body.getAttrib('position')[1] > screen_height:
+                body.setAttrib('valid', False)
+
+
+class PlatformUpdater(OneBodiesContainerLaw):
+    """
+    Обновляет положения невалидных платформ и
+    делает их снова валидными.
+    """
+    @staticmethod
+    def getName():
+        return 'PlatformUpdater'
+
+    def apply(self):
+        """
+        Ожидает в params-ах ключи
+        platform_xmin, platform_xmax,
+        platform_min_distance, platform_max_distance
+        """
+        top = int(min((b.getAttrib('position')[1]
+                       for b in self.bodies)))
+
+        xmin = self.params.get('platform_xmin')
+        xmax = self.params.get('platform_xmax')
+        min_distance = self.params.get('platform_min_distance')
+        max_distance = self.params.get('platform_max_distance')
+        for body in self.bodies:
+            if body.getAttrib('valid'):
+                continue
+
+            x = randint(xmin, xmax)
+            y = top - randint(
+                min_distance, max_distance)
+            body.setAttrib('position', (x, y))
+            body.setAttrib('valid', True)

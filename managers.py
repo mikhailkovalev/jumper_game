@@ -6,7 +6,8 @@ from body import Body
 from scene import Scene
 from contexts import TkContext
 from renderers import JumperRenderer, PlatformRenderer
-from laws import JumperMoving, ScreenScrolling
+from laws import (JumperMoving, ScreenScrolling, PlatformValidator,
+                  PlatformUpdater)
 
 
 class AManager:
@@ -69,8 +70,8 @@ class JumperManager(AManager):
         self.root.bind('<KeyPress>', self.moveJumper)
         self.canvas.pack()
         self.frame_interval = 21
+        self.params = dict(screen_height=self.screen[1])
         self.createScene()
-        self.params = {}
         self.game_over = False
 
     def createScene(self):
@@ -88,7 +89,11 @@ class JumperManager(AManager):
     def createLaws(self):
         self.jumper_moving = JumperMoving()
         self.scroller = ScreenScrolling()
-        self.scene.laws += [self.jumper_moving, self.scroller]
+        self.platform_validator = PlatformValidator()
+        self.platform_updater = PlatformUpdater()
+        self.scene.laws.extend((self.jumper_moving, self.scroller,
+                                self.platform_validator,
+                                self.platform_updater))
 
     def createJumper(self):
         self.jumper = Body()
@@ -122,18 +127,33 @@ class JumperManager(AManager):
                               renderer.image_size[1])
         self.platform_min_distance = self.max_jump_length // 2
         self.platform_max_distance = -10 + self.max_jump_length
+
+        self.params.update({
+            'platform_xmin': self.bord,
+            'platform_xmax': self.platform_xmax,
+            'platform_min_distance': self.platform_min_distance,
+            'platform_max_distance': self.platform_max_distance,
+        })
+
         top = self.screen[1] + self.jumper.getAttrib('size')[1]
         for i in range(count):
             platform = Body()
             self.scene.bodies.append(platform)
             renderer.addBody(platform)
+
+            # Подписываем платформу на законы
             self.jumper_moving.addBody(platform, 'Platform')
             self.scroller.addBody(platform)
+            self.platform_validator.addBody(platform)
+            self.platform_updater.addBody(platform)
+
             x = randint(self.bord, self.platform_xmax)
             y = top - randint(
                 self.platform_min_distance, self.platform_max_distance)
+
             top = y
             platform.setAttrib('position', (x, y))
+            platform.setAttrib('valid', True)
 
     def updatePlatforms(self):
         top = min((b.getAttrib('position')[1]
@@ -182,7 +202,7 @@ class JumperManager(AManager):
         self.applyLaws()
         self.scene.contexts[0].clear()
         self.renderFrame()
-        self.updatePlatforms()
+        # self.updatePlatforms()
         if self.jumper.getAttrib('position')[1] > self.screen[1]:
             self.root.destroy()
         self.root.after(self.frame_interval, self.updateScene)
