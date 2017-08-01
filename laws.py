@@ -192,6 +192,11 @@ class ScreenScrolling(OneBodiesContainerLaw):
 class PlatformValidator(OneBodiesContainerLaw):
     """
     Проверяет платформы на валидность.
+
+    Логика валидации платформ и генерации новых разделена, поскольку в
+    перспективе планируется добавить исчезающие платформы с новыми правилами
+    валидации, при этом логика генерации новых платформ должна оставаться
+    нетронутой.
     """
     @staticmethod
     def getName():
@@ -218,6 +223,8 @@ class PlatformUpdater(OneBodiesContainerLaw):
     """
     Обновляет положения невалидных платформ и
     делает их снова валидными.
+
+    Смотри описание класса PlatformValidator для более подробной информации.
     """
     @staticmethod
     def getName():
