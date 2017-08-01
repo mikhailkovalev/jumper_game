@@ -77,3 +77,23 @@ class AClasher:
 
                 # Если не повезло, то вернём None
                 return None
+
+        def collect_jumper_data(self, jumper):
+            """
+            Сохраняет параметры дудла в инстансе класса.
+
+            (c) Ваш Кэп.
+            """
+            # Платформ много, дудл один (по крайней мере пока), а каждый раз
+            # вытаскивать его атрибуты из словарей несколько накладно. Поэтому
+            # будем пока сохранять атрибуты дудла в инстансе clasher-а, для
+            # хоть какой-то оптимизации
+            self.jax, self.jay = jumper.getAttrib('acceleration')
+            self.jvx, self.lvy = jumper.getAttrib('velocity')
+            self.jx, self.jy = jumper.getAttrib('position')
+
+        def time_to_clash_or_none(self, platform):
+            pass
+
+        def resolve_clash(self, platform):
+            pass
