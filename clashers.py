@@ -89,7 +89,7 @@ class AClasher:
             # будем пока сохранять атрибуты дудла в инстансе clasher-а, для
             # хоть какой-то оптимизации
             self.jax, self.jay = jumper.getAttrib('acceleration')
-            self.jvx, self.lvy = jumper.getAttrib('velocity')
+            self.jvx, self.jvy = jumper.getAttrib('velocity')
             self.jx, self.jy = jumper.getAttrib('position')
 
         def time_to_clash_or_none(self, platform):
