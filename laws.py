@@ -1,6 +1,7 @@
-import numpy as np
 from collections import defaultdict
 from random import randint
+
+from enums import PlatformTypesEnum
 
 
 class ALaw:
@@ -91,85 +92,80 @@ class JumperMoving(ALaw):
 
     def apply(self):
         time_span = self.params['time_span']
-        jx, jy = self.jumper.getAttrib('position')
-        js = self.jumper.getAttrib('size')
-        jvx, jvy = self.jumper.getAttrib('velocity')
-        jax, jay = self.jumper.getAttrib('acceleration')
-        jxf = self.jumper.getAttrib('horizontal_velocity_factor')
-        maxx = self.jumper.getAttrib('max_x_coordinate')
-        while jx > maxx:
-            jx -= maxx
-        while jx < 0:
-            jx += maxx
-        if jvx > 0:
-            self.jumper.setAttrib('mirrored', False)
-        else:
-            self.jumper.setAttrib('mirrored', True)
-        jumper_horizontal_offset = jvx * time_span
-        jumper_vertical_offset = jvy * time_span
-        if jvy < 0:
-            jx += jumper_horizontal_offset
-            jy += jumper_vertical_offset
-            jvx += jax * time_span
-            jvy += jay * time_span
-            if np.fabs(jvx) > self.epsilon:
-                jvx *= jxf
-            self.jumper.setAttrib('position', (jx, jy))
-            self.jumper.setAttrib('velocity', (jvx, jvy))
+        self.collect_jumper_data()
+        self.normalize_jumper()
+
+        if self.jvy < 0:
+            self.simple_moving()
             return
+
+        # Пока всё ещё считаем, что
+        # будем двигаться без столкновений
+        clash_detected = False
+        time_to_first_clash = None
+        clashed_platform = None
+
+        self.send_jumper_data()
         for platform in self.platforms:
-            px, py = platform.getAttrib('position')
-            ps = platform.getAttrib('size')
-            if (self.intersect(
-                    jy + js[1],
-                    jx, jx + js[0],
-                    jumper_horizontal_offset,
-                    jumper_vertical_offset,
-                    py, px, px + ps[0])):
-                down_moving_time = (py - jy - js[1]) / jvy
-                up_moving_time = time_span - down_moving_time
-                jvy = self.jumper.getAttrib('initial_vertical_velocity')
-                jx += jumper_horizontal_offset
-                jy = py - js[1] + jvy * up_moving_time
-                jvx += jax * time_span
-                jvy += jay * up_moving_time
-                if np.fabs(jvx) > self.epsilon:
-                    jvx *= jxf
-                self.jumper.setAttrib('position', (jx, jy))
-                self.jumper.setAttrib('velocity', (jvx, jvy))
-                return
-        jx += jumper_horizontal_offset
-        jy += jumper_vertical_offset
-        jvx += jax * time_span
-        jvy += jay * time_span
-        if np.fabs(jvx) > self.epsilon:
-            jvx *= jxf
-        self.jumper.setAttrib('position', (jx, jy))
-        self.jumper.setAttrib('velocity', (jvx, jvy))
+            clasher = PlatformTypesEnum.clashers[platform.getAttrib('type')]
+            time_to_clash = clasher.time_to_clash_or_none(platform)
+            if (time_to_clash is None or
+                    time_to_clash > time_span):
+                continue
 
-    def intersect(self,
-                  jumper_bottom,
-                  jumper_left,
-                  jumper_right,
-                  jumper_horizontal_offset,
-                  jumper_vertical_offset,
-                  platform_top,
-                  platform_left,
-                  platform_right):
+            clash_detected = True
 
-        new_jumper_bottom = jumper_bottom + jumper_vertical_offset
-        if (not (platform_top >= jumper_bottom and
-                 platform_top <= new_jumper_bottom)):
-            return False
-        if np.fabs(jumper_vertical_offset) < self.epsilon:
-            return False
-        t = (platform_top - jumper_bottom) / jumper_vertical_offset
-        offset = t * jumper_horizontal_offset
-        left = jumper_left + offset
-        right = jumper_right + offset
-        if platform_right < left or platform_left > right:
-            return False
-        return True
+            if (time_to_first_clash is None or
+                    time_to_first_clash > time_to_clash):
+                # Если время первого столкновения ещё не проинициализировано
+                # или текущее выявленное столкновение произойдёт раньше
+                time_to_first_clash = time_to_clash
+                clashed_platform = platform
+
+        if not clash_detected:
+            self.simple_moving()
+        else:
+            up_moving_time = time_span - time_to_first_clash
+            self.jvy = self.jumper.getAttrib('initial_vertical_velocity')
+
+            self.jx += time_span * self.jvx
+            self.jy = (clashed_platform.getAttrib('position')[1]-self.jheight +
+                       self.jvy*up_moving_time)
+            self.jvx += self.jax * time_span
+            self.jvy += self.jay * up_moving_time
+
+            self.export_jumper_data()
+
+    def collect_jumper_data(self):
+        self.jx, self.jy = self.jumper.getAttrib('position')
+        self.jvx, self.jvy = self.jumper.getAttrib('velocity')
+        self.jax, self.jay = self.jumper.getAttrib('acceleration')
+        self.jwidth, self.jheight = self.jumper.getAttrib('size')
+
+    def normalize_jumper(self):
+        self.jx %= self.params['screen_width']
+        self.jumper.setAttrib('mirrored', self.jvx <= 0)
+
+    def simple_moving(self):
+        time_span = self.params['time_span']
+        self.jx += time_span * self.jvx
+        self.jy += time_span * self.jvy
+        self.jvx += time_span * self.jax
+        self.jvy += time_span * self.jay
+        self.export_jumper_data()
+
+    def export_jumper_data(self):
+        self.jumper.setAttrib('position', (self.jx, self.jy))
+        self.jumper.setAttrib('velocity', (self.jvx, self.jvy))
+
+    def send_jumper_data(self):
+        # Выделим множество всех текущих типов платформ и передадим clasher-у
+        # каждого типа инфу о дудле. Выборка делается на случай, если видов
+        # платформ очень много, но в текущий момент юзается много меньше
+        types = {p.getAttrib('type') for p in self.platforms}
+        for t in types:
+            PlatformTypesEnum.clashers[t].collect_jumper_data(
+                self.jumper)
 
 
 class ScreenScrolling(OneBodiesContainerLaw):

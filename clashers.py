@@ -78,20 +78,57 @@ class AClasher:
                 # Если не повезло, то вернём None
                 return None
 
-        def collect_jumper_data(self, jumper):
-            """
-            Сохраняет параметры дудла в инстансе класса.
-            """
-            # Платформ много, дудл один (по крайней мере пока), а каждый раз
-            # вытаскивать его атрибуты из словарей несколько накладно. Поэтому
-            # будем пока сохранять атрибуты дудла в инстансе clasher-а, для
-            # хоть какой-то оптимизации
-            self.jax, self.jay = jumper.getAttrib('acceleration')
-            self.jvx, self.jvy = jumper.getAttrib('velocity')
-            self.jx, self.jy = jumper.getAttrib('position')
+    def collect_jumper_data(self, jumper):
+        """
+        Сохраняет параметры дудла в инстансе класса.
+        """
+        # Платформ много, дудл один (по крайней мере пока), а каждый раз
+        # вытаскивать его атрибуты из словарей несколько накладно. Поэтому
+        # будем пока сохранять атрибуты дудла в инстансе clasher-а, для
+        # хоть какой-то оптимизации
+        self.jax, self.jay = jumper.getAttrib('acceleration')
+        self.jvx, self.jvy = jumper.getAttrib('velocity')
+        self.jx, self.jy = jumper.getAttrib('position')
+        self.jw, self.jh = jumper.getAttrib('size')
+        self.half_jay = 0.5 * self.jay
+        self.half_jax = 0.5 * self.jax
+        self.j_bottom = self.jy + self.jh
 
-        def time_to_clash_or_none(self, platform):
-            pass
+    def time_to_clash_or_none(self, platform):
+        pass
 
-        def resolve_clash(self, platform):
-            pass
+    def resolve_clash(self, platform):
+        pass
+
+
+class StaticClasher(AClasher):
+    """
+    Реализует интерфейс абстрактного clasher-а для реализации взаимодействия
+    дудла со статичными платформами (т.е. неподвижными)
+    """
+
+    def time_to_clash_or_none(self, platform):
+        px, py = platform.getAttrib('position')
+
+        # Сначала найдём время, за которое дудл и платформа окажутся на одном
+        # уровне по оси игрек. Для этого нужно решить квадратное уравнение
+        # jy- py + jvy*t + 0.5*jay * t**2 = 0
+        t = self.square_equation_min_positive_root_or_none(
+                self.half_jay, self.jvy, self.j_bottom - py)
+
+        if t is None:
+            # Если дудл никогда не достигнет одного уровня с платформой
+            return None
+
+        psx = platform.getAttrib('size')[0]
+
+        # Выясним, действительно ли произойдёт столкновение при достжении
+        # дудлом платформы
+
+        njx = self.jx + t*(self.jvx + t*self.half_jax)
+
+        if self.lines_intersects((njx, njx+self.jw), (px, px + psx)):
+            # Если отрезки пересекаются, значит столкновение произошло
+            return t
+
+        return None

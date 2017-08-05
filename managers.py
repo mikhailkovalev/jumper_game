@@ -8,6 +8,7 @@ from contexts import TkContext
 from renderers import JumperRenderer, PlatformRenderer
 from laws import (JumperMoving, ScreenScrolling, PlatformValidator,
                   PlatformUpdater)
+from enums import PlatformTypesEnum
 
 
 class AManager:
@@ -70,7 +71,10 @@ class JumperManager(AManager):
         self.root.bind('<KeyPress>', self.moveJumper)
         self.canvas.pack()
         self.frame_interval = 21
-        self.params = dict(screen_height=self.screen[1])
+        self.params = {
+            'screen_width': self.screen[0],
+            'screen_height': self.screen[1],
+        }
         self.createScene()
         self.game_over = False
 
@@ -155,19 +159,8 @@ class JumperManager(AManager):
             platform.setAttrib('position', (x, y))
             platform.setAttrib('valid', True)
 
-    def updatePlatforms(self):
-        top = min((b.getAttrib('position')[1]
-                   for b in self.scene.bodies if b != self.jumper))
-        top = int(top)
-        for b in self.scene.bodies:
-            if b == self.jumper:
-                continue
-            x, y = b.getAttrib('position')
-            if y > self.screen[1]:
-                x = randint(self.bord, self.platform_xmax)
-                y = top - randint(
-                    self.platform_min_distance, self.platform_max_distance)
-                b.setAttrib('position', (x, y))
+            # Пока что все платформы сделаем статичными
+            platform.setAttrib('type', PlatformTypesEnum.STATIC)
 
     def moveJumper(self, event):
         vx, vy = self.jumper.getAttrib('velocity')
@@ -202,7 +195,6 @@ class JumperManager(AManager):
         self.applyLaws()
         self.scene.contexts[0].clear()
         self.renderFrame()
-        # self.updatePlatforms()
         if self.jumper.getAttrib('position')[1] > self.screen[1]:
             self.root.destroy()
         self.root.after(self.frame_interval, self.updateScene)
