@@ -67,3 +67,24 @@ class PlatformRenderer(ARenderer):
     def renderOne(self, body):
         x, y = body.getAttrib('position')
         self.context.drawImage(x, y, self.image)
+
+
+class BackgroundRenderer(ARenderer):
+    @staticmethod
+    def getName():
+        return 'BackgroundRenderer'
+
+    def __init__(self, context=None):
+        super().__init__(context)
+        image = Image.open('./images/background.png')
+        self.image = ImageTk.PhotoImage(image)
+        self.image_size = image.size
+
+    def addBody(self, body):
+        super().addBody(body)
+        # body.setAttrib('size', self.image_size)
+
+    def renderOne(self, body):
+        y = body.getAttrib('position')[1] % self.screen_height
+        self.context.drawImage(0, y, self.image)
+        self.context.drawImage(0, y-self.image_size[1], self.image)

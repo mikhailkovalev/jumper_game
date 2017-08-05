@@ -5,7 +5,7 @@ from random import randint
 from body import Body
 from scene import Scene
 from contexts import TkContext
-from renderers import JumperRenderer, PlatformRenderer
+from renderers import JumperRenderer, PlatformRenderer, BackgroundRenderer
 from laws import (JumperMoving, ScreenScrolling, PlatformValidator,
                   PlatformUpdater)
 from enums import PlatformTypesEnum
@@ -175,7 +175,17 @@ class JumperManager(AManager):
             return
 
     def createBackground(self):
-        pass
+        self.background = Body()
+        self.scene.bodies.append(self.background)
+        self.background.setAttrib('position', (0, 0))
+
+        self.scroller.addBody(self.background)
+
+        context = self.scene.contexts[0]
+        renderer = BackgroundRenderer(context)
+        renderer.screen_height = self.screen[1]
+        renderer.addBody(self.background)
+        self.scene.renderers.insert(0, renderer)
 
     def setScrollSize(self):
         factor = 0.2
