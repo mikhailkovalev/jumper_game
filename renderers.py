@@ -1,5 +1,8 @@
 from PIL import Image, ImageTk
 
+from api import repaint_sprite
+from enums import PlatformTypesEnum
+
 
 class ARenderer:
     @staticmethod
@@ -26,6 +29,7 @@ class ARenderer:
 
 
 class JumperRenderer(ARenderer):
+
     @staticmethod
     def getName():
         return 'JumperRenderer'
@@ -50,15 +54,38 @@ class JumperRenderer(ARenderer):
 
 
 class PlatformRenderer(ARenderer):
+
+    # Стандартный цвет платформы. Пока задаём хардкодом
+    old_color = (133, 194, 38)
+
     @staticmethod
     def getName():
         return 'PlatformRenderer'
 
     def __init__(self, context=None):
         super().__init__(context)
-        image = Image.open('./images/platform.png')
-        self.image = ImageTk.PhotoImage(image)
-        self.image_size = image.size
+        self.collect_sprites()
+
+    def collect_sprites(self):
+        default_sprite = Image.open('./images/platform.png')
+        self.image_size = default_sprite.size
+
+        colors = PlatformTypesEnum.colors
+
+        self.sprites = {}
+        for k in PlatformTypesEnum.keys:
+            current_color = colors.get(k)
+
+            if current_color:
+                sprite = repaint_sprite(
+                    default_sprite,
+                    self.old_color,
+                    current_color
+                )
+            else:
+                sprite = default_sprite
+
+            self.sprites[k] = ImageTk.PhotoImage(sprite)
 
     def addBody(self, body):
         super().addBody(body)
@@ -66,7 +93,8 @@ class PlatformRenderer(ARenderer):
 
     def renderOne(self, body):
         x, y = body.getAttrib('position')
-        self.context.drawImage(x, y, self.image)
+        type_ = body.getAttrib('type')
+        self.context.drawImage(x, y, self.sprites[type_])
 
 
 class BackgroundRenderer(ARenderer):

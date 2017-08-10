@@ -132,3 +132,11 @@ class StaticClasher(AClasher):
             return t
 
         return None
+
+
+class LiftClasher(AClasher):
+    """
+    Реализует интерфейс абстрактного clasher-а для реализации взаимодействия
+    дудла с вертикально движужимися платформами
+    """
+    pass
