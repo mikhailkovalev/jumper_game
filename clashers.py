@@ -93,6 +93,7 @@ class AClasher:
         self.half_jay = 0.5 * self.jay
         self.half_jax = 0.5 * self.jax
         self.j_bottom = self.jy + self.jh
+        self.maxx = jumper.getAttrib('max_x_coordinate')
 
     def time_to_clash_or_none(self, platform):
         pass
@@ -127,7 +128,20 @@ class StaticClasher(AClasher):
 
         njx = self.jx + t*(self.jvx + t*self.half_jax)
 
-        if self.lines_intersects((njx, njx+self.jw), (px, px + psx)):
+        # Если дудл присутствует на границе экрана, то нужно проверять
+        # пересечение двух отрезков с текущей платформой
+        has_intersect = self.lines_intersects(
+            (njx, njx+self.jw),
+            (px, px + psx)
+        )
+
+        if njx > self.maxx - self.jw:
+            has_intersect |= self.lines_intersects(
+                (njx-self.maxx, njx+self.jw-self.maxx),
+                (px, px + psx)
+            )
+
+        if has_intersect:
             # Если отрезки пересекаются, значит столкновение произошло
             return t
 
